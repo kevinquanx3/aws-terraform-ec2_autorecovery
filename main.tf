@@ -224,7 +224,7 @@ values = filter.value.values
 }
 
 data "template_file" "user_data" {
-template = file("${path.module}/text/${local.user_data_map[var.ec2_os]}")
+template = file("${path.module}/text/${lookup(local.user_data_map, var.ec2_os)}")
 
 vars = {
 initial_commands = var.initial_userdata_commands != "" ? var.initial_userdata_commands : ""
@@ -355,14 +355,12 @@ region = data.aws_region.current_region.name
 }
 
 data "template_file" "additional_ssm_docs" {
-template = "    $${additional_ssm_cmd_json},"
-count    = var.additional_ssm_bootstrap_step_count
+  template = "    $${additional_ssm_cmd_json},"
+  count    = var.additional_ssm_bootstrap_step_count
 
-vars = {
-additional_ssm_cmd_json = trimspace(
-var.additional_ssm_bootstrap_list[count.index]["ssm_add_step"],
-)
-}
+  vars = {
+    additional_ssm_cmd_json = trimspace(lookup("${var.additional_ssm_bootstrap_list[count.index]}", "ssm_add_step"))
+  }
 }
 
 data "template_file" "ssm_bootstrap_template" {
