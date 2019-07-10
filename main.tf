@@ -451,7 +451,7 @@ count.index,
 }
 
 module "status_check_failed_system_alarm_ticket" {
-source = "git@github.com:rackspace-infrastructure-automation/aws-terraform-cloudwatch_alarm//?ref=v0.0.1"
+source = "git@github.com:rackspace-infrastructure-automation/aws-terraform-cloudwatch_alarm//?ref=tf_0.12-upgrade"
 
 alarm_count       = var.instance_count
 alarm_description = "Status checks have failed for system, generating ticket."
@@ -523,7 +523,7 @@ alarm_actions = ["arn:aws:automate:${data.aws_region.current_region.name}:ec2:re
 }
 
 module "status_check_failed_instance_alarm_ticket" {
-source = "git@github.com:rackspace-infrastructure-automation/aws-terraform-cloudwatch_alarm//?ref=v0.0.1"
+source = "git@github.com:rackspace-infrastructure-automation/aws-terraform-cloudwatch_alarm//?ref=tf_0.12-upgrade"
 
 alarm_count       = var.instance_count
 alarm_description = "Status checks have failed, generating ticket."
@@ -547,7 +547,7 @@ unit                     = "Count"
 }
 
 module "cpu_alarm_high" {
-source = "git@github.com:rackspace-infrastructure-automation/aws-terraform-cloudwatch_alarm//?ref=v0.0.1"
+source = "git@github.com:rackspace-infrastructure-automation/aws-terraform-cloudwatch_alarm//?ref=tf_0.12-upgrade"
 
 alarm_count              = var.instance_count
 alarm_description        = "CPU Alarm ${var.cw_cpu_high_operator} ${var.cw_cpu_high_threshold}% for ${var.cw_cpu_high_period} seconds ${var.cw_cpu_high_evaluations} times."
