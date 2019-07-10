@@ -437,41 +437,36 @@ retention_in_days = var.cloudwatch_log_retention
 }
 
 data "null_data_source" "alarm_dimensions" {
-count = var.instance_count
+  count = var.instance_count
 
-inputs = {
-InstanceId = element(
-coalescelist(
-aws_instance.mod_ec2_instance_with_secondary_ebs.*.id,
-aws_instance.mod_ec2_instance_no_secondary_ebs.*.id,
-),
-count.index,
-)
-}
+  inputs = {
+  InstanceId = element(
+    coalescelist( aws_instance.mod_ec2_instance_with_secondary_ebs.*.id, aws_instance.mod_ec2_instance_no_secondary_ebs.*.id,), count.index,)
+  }
 }
 
 module "status_check_failed_system_alarm_ticket" {
-source = "git@github.com:rackspace-infrastructure-automation/aws-terraform-cloudwatch_alarm//?ref=tf_0.12-upgrade"
+  source = "git@github.com:rackspace-infrastructure-automation/aws-terraform-cloudwatch_alarm//?ref=tf_0.12-upgrade"
 
-alarm_count       = var.instance_count
-alarm_description = "Status checks have failed for system, generating ticket."
-alarm_name = join(
-"-",
-["StatusCheckFailedSystemAlarmTicket", var.resource_name],
-)
-comparison_operator      = "GreaterThanThreshold"
-dimensions               = data.null_data_source.alarm_dimensions.*.outputs
-evaluation_periods       = "2"
-notification_topic       = [var.notification_topic]
-metric_name              = "StatusCheckFailed_System"
-rackspace_alarms_enabled = true
-rackspace_managed        = var.rackspace_managed
-namespace                = "AWS/EC2"
-period                   = "60"
-severity                 = "emergency"
-statistic                = "Minimum"
-threshold                = "0"
-unit                     = "Count"
+  alarm_count       = var.instance_count
+  alarm_description = "Status checks have failed for system, generating ticket."
+  alarm_name = join(
+  "-",
+  ["StatusCheckFailedSystemAlarmTicket", var.resource_name],
+  )
+  comparison_operator      = "GreaterThanThreshold"
+  dimensions               = data.null_data_source.alarm_dimensions.outputs
+  evaluation_periods       = "2"
+  notification_topic       = [var.notification_topic]
+  metric_name              = "StatusCheckFailed_System"
+  rackspace_alarms_enabled = true
+  rackspace_managed        = var.rackspace_managed
+  namespace                = "AWS/EC2"
+  period                   = "60"
+  severity                 = "emergency"
+  statistic                = "Minimum"
+  threshold                = "0"
+  unit                     = "Count"
 }
 
 resource "aws_cloudwatch_metric_alarm" "status_check_failed_instance_alarm_reboot" {
@@ -532,7 +527,7 @@ alarm_name = join(
 ["StatusCheckFailedInstanceAlarmTicket", var.resource_name],
 )
 comparison_operator      = "GreaterThanThreshold"
-dimensions               = data.null_data_source.alarm_dimensions.*.outputs
+dimensions               = data.null_data_source.alarm_dimensions.outputs
 evaluation_periods       = "10"
 metric_name              = "StatusCheckFailed_Instance"
 notification_topic       = [var.notification_topic]
@@ -554,7 +549,7 @@ alarm_description        = "CPU Alarm ${var.cw_cpu_high_operator} ${var.cw_cpu_h
 alarm_name               = join("-", ["CPUAlarmHigh", var.resource_name])
 comparison_operator      = var.cw_cpu_high_operator
 customer_alarms_enabled  = true
-dimensions               = data.null_data_source.alarm_dimensions.*.outputs
+dimensions               = data.null_data_source.alarm_dimensions.outputs
 evaluation_periods       = var.cw_cpu_high_evaluations
 metric_name              = "CPUUtilization"
 notification_topic       = [var.notification_topic]
