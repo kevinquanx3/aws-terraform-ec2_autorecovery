@@ -201,8 +201,13 @@ EOF
 data "aws_ami" "ar_ami" {
   most_recent = true
   owners      = [local.ami_owner_mapping[var.ec2_os]]
-  filter      = concat(local.standard_filters, local.image_filter[var.ec2_os])
-
+  dynamic "filter" {
+    for_each = concat(local.standard_filters, local.image_filter[var.ec2_os])
+    content {
+      name   = filter.value.name
+      values = filter.value.values
+    }
+  }
 }
 
 data "template_file" "user_data" {
