@@ -417,7 +417,7 @@ module "status_check_failed_system_alarm_ticket" {
   alarm_description = "Status checks have failed for system, generating ticket."
   alarm_name               = join("-", list("StatusCheckFailedSystemAlarmTicket", var.resource_name))
   comparison_operator      = "GreaterThanThreshold"
-  dimensions               = data.null_data_source.alarm_dimensions.outputs
+  dimensions               = data.null_data_source.alarm_dimensions.*.outputs
   evaluation_periods       = "2"
   notification_topic       = [var.notification_topic]
   metric_name              = "StatusCheckFailed_System"
@@ -472,7 +472,7 @@ module "status_check_failed_instance_alarm_ticket" {
   alarm_description = "Status checks have failed, generating ticket."
   alarm_name               = join("-", list("StatusCheckFailedInstanceAlarmTicket", var.resource_name))
   comparison_operator      = "GreaterThanThreshold"
-  dimensions               = data.null_data_source.alarm_dimensions.outputs
+  dimensions               = data.null_data_source.alarm_dimensions.*.outputs
   evaluation_periods       = "10"
   metric_name              = "StatusCheckFailed_Instance"
   notification_topic       = [var.notification_topic]
@@ -494,7 +494,7 @@ module "cpu_alarm_high" {
   alarm_name               = join("-", list("CPUAlarmHigh", var.resource_name))
   comparison_operator      = var.cw_cpu_high_operator
   customer_alarms_enabled  = true
-  dimensions               = data.null_data_source.alarm_dimensions.outputs
+  dimensions               = data.null_data_source.alarm_dimensions.*.outputs
   evaluation_periods       = var.cw_cpu_high_evaluations
   metric_name              = "CPUUtilization"
   notification_topic       = [var.notification_topic]
