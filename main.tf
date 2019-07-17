@@ -383,8 +383,8 @@ resource "aws_ssm_association" "ssm_bootstrap_assoc" {
   schedule_expression = var.ssm_association_refresh_rate
 
   targets {
-    key = "InstanceIds"
-    values = coalescelist(aws_instance.mod_ec2_instance_no_secondary_ebs.*.id,aws_instance.mod_ec2_instance_with_secondary_ebs.*.id)
+    key    = "InstanceIds"
+    values = coalescelist(aws_instance.mod_ec2_instance_no_secondary_ebs.*.id, aws_instance.mod_ec2_instance_with_secondary_ebs.*.id)
   }
 }
 
@@ -406,15 +406,15 @@ data "null_data_source" "alarm_dimensions" {
   count = var.instance_count
 
   inputs = {
-    InstanceId = element(coalescelist(aws_instance.mod_ec2_instance_with_secondary_ebs.*.id, aws_instance.mod_ec2_instance_no_secondary_ebs.*.id ), count.index )
+    InstanceId = element(coalescelist(aws_instance.mod_ec2_instance_with_secondary_ebs.*.id, aws_instance.mod_ec2_instance_no_secondary_ebs.*.id), count.index)
   }
 }
 
 module "status_check_failed_system_alarm_ticket" {
   source = "git@github.com:rackspace-infrastructure-automation/aws-terraform-cloudwatch_alarm//?ref=tf_0.12-upgrade"
 
-  alarm_count       = var.instance_count
-  alarm_description = "Status checks have failed for system, generating ticket."
+  alarm_count              = var.instance_count
+  alarm_description        = "Status checks have failed for system, generating ticket."
   alarm_name               = join("-", list("StatusCheckFailedSystemAlarmTicket", var.resource_name))
   comparison_operator      = "GreaterThanThreshold"
   dimensions               = data.null_data_source.alarm_dimensions.*.outputs
@@ -432,9 +432,9 @@ module "status_check_failed_system_alarm_ticket" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "status_check_failed_instance_alarm_reboot" {
-  count             = var.enable_recovery_alarms ? var.instance_count : 0
-  alarm_description = "Status checks have failed, rebooting system."
-  alarm_name          = join("-", list("StatusCheckFailedInstanceAlarmReboot", var.resource_name, format("%03d",count.index+1)))
+  count               = var.enable_recovery_alarms ? var.instance_count : 0
+  alarm_description   = "Status checks have failed, rebooting system."
+  alarm_name          = join("-", list("StatusCheckFailedInstanceAlarmReboot", var.resource_name, format("%03d", count.index + 1)))
   comparison_operator = "GreaterThanThreshold"
   dimensions          = data.null_data_source.alarm_dimensions[count.index].outputs
   evaluation_periods  = "5"
@@ -449,9 +449,9 @@ resource "aws_cloudwatch_metric_alarm" "status_check_failed_instance_alarm_reboo
 }
 
 resource "aws_cloudwatch_metric_alarm" "status_check_failed_system_alarm_recover" {
-  count             = var.enable_recovery_alarms ? var.instance_count : 0
-  alarm_description = "Status checks have failed for system, recovering instance"
-  alarm_name          = join("-", list("StatusCheckFailedSystemAlarmRecover", var.resource_name, format("%03d",count.index+1)))
+  count               = var.enable_recovery_alarms ? var.instance_count : 0
+  alarm_description   = "Status checks have failed for system, recovering instance"
+  alarm_name          = join("-", list("StatusCheckFailedSystemAlarmRecover", var.resource_name, format("%03d", count.index + 1)))
   comparison_operator = "GreaterThanThreshold"
   dimensions          = data.null_data_source.alarm_dimensions[count.index].outputs
   evaluation_periods  = "2"
@@ -468,8 +468,8 @@ resource "aws_cloudwatch_metric_alarm" "status_check_failed_system_alarm_recover
 module "status_check_failed_instance_alarm_ticket" {
   source = "git@github.com:rackspace-infrastructure-automation/aws-terraform-cloudwatch_alarm//?ref=tf_0.12-upgrade"
 
-  alarm_count       = var.instance_count
-  alarm_description = "Status checks have failed, generating ticket."
+  alarm_count              = var.instance_count
+  alarm_description        = "Status checks have failed, generating ticket."
   alarm_name               = join("-", list("StatusCheckFailedInstanceAlarmTicket", var.resource_name))
   comparison_operator      = "GreaterThanThreshold"
   dimensions               = data.null_data_source.alarm_dimensions.*.outputs
@@ -521,7 +521,7 @@ resource "aws_instance" "mod_ec2_instance_no_secondary_ebs" {
   tenancy                = var.tenancy
   monitoring             = var.detailed_monitoring
   iam_instance_profile   = element(coalescelist(aws_iam_instance_profile.instance_role_instance_profile.*.name, list(var.instance_profile_override_name)), 0)
-  user_data_base64 = base64encode(data.template_file.user_data.rendered)
+  user_data_base64       = base64encode(data.template_file.user_data.rendered)
 
   # coalescelist and list("") were used here due to element not being able to handle empty lists, even if conditional will not allow portion to execute
   private_ip              = element(coalescelist(var.private_ip_address, [""]), count.index)
@@ -543,11 +543,7 @@ resource "aws_instance" "mod_ec2_instance_no_secondary_ebs" {
     create = var.creation_policy_timeout
   }
 
-  tags = merge(
-    map("Name", "${var.resource_name}${var.instance_count > 1 ? format("-%03d",count.index+1) : ""}"),
-    local.tags,
-    var.additional_tags
-  )
+  tags = merge(map("Name", "${var.resource_name}${var.instance_count > 1 ? format("-%03d", count.index + 1) : ""}"), local.tags, var.additional_tags)
 }
 
 resource "aws_instance" "mod_ec2_instance_with_secondary_ebs" {
@@ -561,7 +557,7 @@ resource "aws_instance" "mod_ec2_instance_with_secondary_ebs" {
   tenancy                = var.tenancy
   monitoring             = var.detailed_monitoring
   iam_instance_profile   = element(coalescelist(aws_iam_instance_profile.instance_role_instance_profile.*.name, list(var.instance_profile_override_name)), 0)
-  user_data_base64 = base64encode(data.template_file.user_data.rendered)
+  user_data_base64       = base64encode(data.template_file.user_data.rendered)
 
   # coalescelist and list("") were used here due to element not being able to handle empty lists, even if conditional will not allow portion to execute
   private_ip              = element(coalescelist(var.private_ip_address, [""]), count.index)
@@ -593,7 +589,7 @@ resource "aws_instance" "mod_ec2_instance_with_secondary_ebs" {
   }
 
   tags = merge(
-    map("Name", "${var.resource_name}${var.instance_count > 1 ? format("-%03d",count.index+1) : ""}"),
+    map("Name", "${var.resource_name}${var.instance_count > 1 ? format("-%03d", count.index + 1) : ""}"),
     local.tags,
     var.additional_tags
   )
