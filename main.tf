@@ -406,7 +406,7 @@ data "null_data_source" "alarm_dimensions" {
   count = var.instance_count
 
   inputs = {
-    InstanceId = element(coalescelist(aws_instance.mod_ec2_instance_with_secondary_ebs.*.id, aws_instance.mod_ec2_instance_no_secondary_ebs.*.id), count.index)
+    InstanceId = element(coalescelist(aws_instance.mod_ec2_instance_with_secondary_ebs.*.id, aws_instance.mod_ec2_instance_no_secondary_ebs.*.id, [null]), count.index)
   }
 }
 
