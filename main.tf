@@ -78,7 +78,7 @@ locals {
     ServiceProvider = "Rackspace"
     SSMInventory    = "${var.perform_ssm_inventory_tag}"
   }
-
+/*
   ssm_codedeploy_include = {
     enabled = <<EOF
     {
@@ -140,7 +140,7 @@ EOF
 EOF
 
     disabled = ""
-  }
+  }*/
 
   ami_owner_mapping = {
     amazon        = "137112412989"
