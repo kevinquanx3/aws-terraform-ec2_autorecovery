@@ -1,84 +1,74 @@
 /**
  * # aws-terraform-ec2_autorecovery
  *
- * This module creates one or more autorecovery instances.
+ *This module creates one or more autorecovery instances.
  *
- * ## Basic Usage
+ *## Basic Usage
  *
- * ```HCL
- * module "ar" {
- *   source = "git@github.com:rackspace-infrastructure-automation/aws-terraform-ec2_autorecovery//?ref=v0.0.20"
+ *```
+ *module "ar" {
+ *  source = "git@github.com:rackspace-infrastructure-automation/aws-terraform-ec2_autorecovery//?ref=v0.0.2"
  *
- *   ec2_os              = "amazon"
- *   subnets             = ["${module.vpc.private_subnets}"]
- *   image_id            = "${var.image_id}"
- *   resource_name       = "my_ar_instance"
- *   security_group_list = ["${module.sg.private_web_security_group_id}"]
- * }
- * ```
+ *  ec2_os              = "amazon"
+ *  subnets             = ["${module.vpc.private_subnets}"]
+ *  image_id            = "${var.image_id}"
+ *  resource_name       = "my_ar_instance"
+ *  security_group_list = ["${module.sg.private_web_security_group_id}"]
+ *}
+ *```
  *
  * Full working references are available at [examples](examples)
- * _**Note**: When using an existing EBS snapshot you can not use the encryption variable. The encryption must be set at the snapshot level._
- *
- * ## Other TF Modules Used
- * Using [aws-terraform-cloudwatch_alarm](https://github.com/rackspace-infrastructure-automation/aws-terraform-cloudwatch_alarm) to create the following CloudWatch Alarms:
- * - status_check_failed_system_alarm_ticket
- * - status_check_failed_instance_alarm_reboot
- * - status_check_failed_system_alarm_recover
- * - status_check_failed_instance_alarm_ticket
- * - cpu_alarm_high
  */
 
+resource "random_string" "r_string" {
+  length  = 16
+  upper   = true
+  lower   = false
+  number  = true
+  special = false
+}
+
 locals {
-  ec2_os = "${lower(var.ec2_os)}"
-
-  ec2_os_windows_length_test = "${length(local.ec2_os) >= 7 ? 7 : length(local.ec2_os)}"
-  ec2_os_windows             = "${substr(local.ec2_os, 0, local.ec2_os_windows_length_test) == "windows" ? true : false}"
-
   user_data_map = {
     amazon        = "amazon_linux_userdata.sh"
     amazon2       = "amazon_linux_userdata.sh"
-    centos6       = "rhel_centos_6_userdata.sh"
-    centos7       = "rhel_centos_7_userdata.sh"
     rhel6         = "rhel_centos_6_userdata.sh"
     rhel7         = "rhel_centos_7_userdata.sh"
-    rhel8         = "rhel_centos_8_userdata.sh"
+    centos6       = "rhel_centos_6_userdata.sh"
+    centos7       = "rhel_centos_7_userdata.sh"
     ubuntu14      = "ubuntu_userdata.sh"
     ubuntu16      = "ubuntu_userdata.sh"
     ubuntu18      = "ubuntu_userdata.sh"
     windows2008   = "windows_userdata.ps1"
-    windows2012r2 = "windows_userdata.ps1"
+    windows2012R2 = "windows_userdata.ps1"
     windows2016   = "windows_userdata.ps1"
-    windows2019   = "windows_userdata.ps1"
   }
 
   ebs_device_map = {
-    amazon        = "/dev/sdf"
-    amazon2       = "/dev/sdf"
-    centos6       = "/dev/sdf"
-    centos7       = "/dev/sdf"
     rhel6         = "/dev/sdf"
     rhel7         = "/dev/sdf"
-    rhel8         = "/dev/sdf"
+    centos6       = "/dev/sdf"
+    centos7       = "/dev/sdf"
+    windows2008   = "xvdf"
+    windows2012R2 = "xvdf"
+    windows2016   = "xvdf"
     ubuntu14      = "/dev/sdf"
     ubuntu16      = "/dev/sdf"
     ubuntu18      = "/dev/sdf"
-    windows2008   = "xvdf"
-    windows2012r2 = "xvdf"
-    windows2016   = "xvdf"
-    windows2019   = "xvdf"
+    amazon        = "/dev/sdf"
+    amazon2       = "/dev/sdf"
   }
 
-  cwagent_config = "${local.ec2_os_windows ? "windows_cw_agent_param.json" : "linux_cw_agent_param.json"}"
+  cwagent_config = "${var.ec2_os != "windows" ? "linux_cw_agent_param.json" : "windows_cw_agent_param.json"}"
 
   tags = {
-    Backup          = "${var.backup_tag_value}"
-    Environment     = "${var.environment}"
-    "Patch Group"   = "${var.ssm_patching_group}"
     ServiceProvider = "Rackspace"
+    Environment     = "${var.environment}"
+    Backup          = "${var.backup_tag_value}"
     SSMInventory    = "${var.perform_ssm_inventory_tag}"
+    "Patch Group"   = "${var.ssm_patching_group}"
   }
-/*
+
   ssm_codedeploy_include = {
     enabled = <<EOF
     {
@@ -94,26 +84,9 @@ EOF
     disabled = ""
   }
 
-  ssm_scaleft_include = {
-    enabled = <<EOF
-    {
-      "action": "aws:runDocument",
-      "inputs": {
-        "documentPath": "arn:aws:ssm:${data.aws_region.current_region.name}:507897595701:document/Rack-Install_ScaleFT",
-        "documentType": "SSMDocument"
-      },
-      "name": "SetupPassport",
-      "timeoutSeconds": 300
-    },
-EOF
-
-    disabled = ""
-  }
-
   codedeploy_install = "${var.install_codedeploy_agent && var.rackspace_managed ? "enabled" : "disabled"}"
-  scaleft_install    = "${var.install_scaleft_agent && var.rackspace_managed ? "enabled" : "disabled"}"
 
-  nfs_install = "${var.install_nfs && var.rackspace_managed && lookup(local.nfs_packages, local.ec2_os, "") != "" ? "enabled" : "disabled"}"
+  nfs_install = "${var.install_nfs && var.rackspace_managed && lookup(local.nfs_packages, var.ec2_os, "") != "" ? "enabled" : "disabled"}"
 
   nfs_packages = {
     amazon   = "nfs-utils"
@@ -132,7 +105,7 @@ EOF
         "documentType": "SSMDocument",
         "documentPath": "arn:aws:ssm:${data.aws_region.current_region.name}:507897595701:document/Rack-Install_Package",
         "documentParameters": {
-          "Packages": "${lookup(local.nfs_packages, local.ec2_os, "")}"
+          "Packages": "${lookup(local.nfs_packages, var.ec2_os, "")}"
         }
       },
       "name": "InstallNFS"
@@ -140,7 +113,25 @@ EOF
 EOF
 
     disabled = ""
-  }*/
+  }
+
+  alarm_sns_notification = "${compact(list(var.alarm_notification_topic))}"
+
+  alarm_emergency_ticket = [
+    "arn:aws:sns:${data.aws_region.current_region.name}:${data.aws_caller_identity.current_account.account_id}:rackspace-support-emergency",
+  ]
+
+  recovery_action = "${var.rackspace_managed ? "managed" : "unmanaged"}"
+
+  recovery_alarm_action = {
+    managed   = "${local.alarm_emergency_ticket}"
+    unmanaged = "${local.alarm_sns_notification}"
+  }
+
+  recovery_ok_action = {
+    managed   = "${local.alarm_emergency_ticket}"
+    unmanaged = []
+  }
 
   ami_owner_mapping = {
     amazon        = "137112412989"
@@ -149,14 +140,12 @@ EOF
     centos7       = "679593333241"
     rhel6         = "309956199498"
     rhel7         = "309956199498"
-    rhel8         = "309956199498"
     ubuntu14      = "099720109477"
     ubuntu16      = "099720109477"
     ubuntu18      = "099720109477"
     windows2008   = "801119661308"
-    windows2012r2 = "801119661308"
+    windows2012R2 = "801119661308"
     windows2016   = "801119661308"
-    windows2019   = "801119661308"
   }
 
   ami_name_mapping = {
@@ -166,62 +155,13 @@ EOF
     centos7       = "CentOS Linux 7 x86_64 HVM EBS*"
     rhel6         = "RHEL-6.*_HVM_GA-*x86_64*"
     rhel7         = "RHEL-7.*_HVM_GA-*x86_64*"
-    rhel8         = "RHEL-8.*_HVM-*x86_64*"
     ubuntu14      = "*ubuntu-trusty-14.04-amd64-server*"
     ubuntu16      = "*ubuntu-xenial-16.04-amd64-server*"
-    ubuntu18      = "ubuntu/images/hvm-ssd/*ubuntu-bionic-18.04-amd64-server*"
+    ubuntu18      = "*ubuntu-bionic-18.04-amd64-server*"
     windows2008   = "Windows_Server-2008-R2_SP1-English-64Bit-Base*"
-    windows2012r2 = "Windows_Server-2012-R2_RTM-English-64Bit-Base*"
+    windows2012R2 = "Windows_Server-2012-R2_RTM-English-64Bit-Base*"
     windows2016   = "Windows_Server-2016-English-Full-Base*"
-    windows2019   = "Windows_Server-2019-English-Full-Base*"
   }
-
-  # Any custom AMI filters for a given OS can be added in this mapping
-  image_filter = {
-    amazon        = []
-    amazon2       = []
-    rhel6         = []
-    rhel7         = []
-    rhel8         = []
-    ubuntu14      = []
-    ubuntu16      = []
-    ubuntu18      = []
-    windows2008   = []
-    windows2012r2 = []
-    windows2016   = []
-    windows2019   = []
-
-    # Added to ensure only AMIS under the official CentOS 6 product code are retrieved
-    centos6 = [
-      {
-        name   = "product-code"
-        values = ["6x5jmcajty9edm3f211pqjfn2"]
-      },
-    ]
-
-    # Added to ensure only AMIS under the official CentOS 7 product code are retrieved
-    centos7 = [
-      {
-        name   = "product-code"
-        values = ["aw0evgkw8e5c1q413zgy5pjce"]
-      },
-    ]
-  }
-
-  standard_filters = [
-    {
-      name   = "virtualization-type"
-      values = ["hvm"]
-    },
-    {
-      name   = "root-device-type"
-      values = ["ebs"]
-    },
-    {
-      name   = "name"
-      values = ["${local.ami_name_mapping[local.ec2_os]}"]
-    },
-  ]
 
   cw_config_parameter_name = "CWAgent-${var.resource_name}"
 }
@@ -229,12 +169,26 @@ EOF
 # Lookup the correct AMI based on the region specified
 data "aws_ami" "ar_ami" {
   most_recent = true
-  owners      = ["${local.ami_owner_mapping[local.ec2_os]}"]
-  filter      = "${concat(local.standard_filters, local.image_filter[local.ec2_os])}"
+  owners      = ["${local.ami_owner_mapping[var.ec2_os]}"]
+
+  filter {
+    name   = "name"
+    values = ["${local.ami_name_mapping[var.ec2_os]}"]
+  }
+
+  filter {
+    name   = "root-device-type"
+    values = ["ebs"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
 }
 
 data "template_file" "user_data" {
-  template = "${file("${path.module}/text/${lookup(local.user_data_map, local.ec2_os)}")}"
+  template = "${file("${path.module}/text/${lookup(local.user_data_map, var.ec2_os)}")}"
 
   vars {
     initial_commands = "${var.initial_userdata_commands != "" ? "${var.initial_userdata_commands}" : "" }"
@@ -283,41 +237,15 @@ data "aws_iam_policy_document" "mod_ec2_instance_role_policies" {
     effect = "Allow"
 
     actions = [
+      "cloudwatch:PutMetricData",
       "cloudwatch:GetMetricStatistics",
       "cloudwatch:ListMetrics",
-      "cloudwatch:PutMetricData",
-      "ec2:DescribeTags",
-      "logs:CreateLogGroup",
       "logs:CreateLogStream",
+      "ec2:DescribeTags",
       "logs:DescribeLogStreams",
+      "logs:CreateLogGroup",
       "logs:PutLogEvents",
       "ssm:GetParameter",
-    ]
-
-    resources = ["*"]
-  }
-
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "s3:PutObject",
-      "s3:GetObject",
-      "s3:GetEncryptionConfiguration",
-      "s3:AbortMultipartUpload",
-      "s3:ListMultipartUploadParts",
-      "s3:ListBucket",
-      "s3:ListBucketMultipartUploads",
-    ]
-
-    resources = ["*"]
-  }
-
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "s3:GetBucketLocation",
     ]
 
     resources = ["*"]
@@ -331,69 +259,48 @@ data "aws_iam_policy_document" "mod_ec2_instance_role_policies" {
 }
 
 resource "aws_iam_policy" "create_instance_role_policy" {
-  count = "${var.instance_profile_override ? 0 : 1}"
-
+  count       = "${var.instance_profile_override ? 0 : 1}"
   name        = "InstanceRolePolicy-${var.resource_name}"
   description = "Rackspace Instance Role Policies for EC2"
   policy      = "${data.aws_iam_policy_document.mod_ec2_instance_role_policies.json}"
 }
 
 resource "aws_iam_role" "mod_ec2_instance_role" {
-  count = "${var.instance_profile_override ? 0 : 1}"
-
+  count              = "${var.instance_profile_override ? 0 : 1}"
   name               = "InstanceRole-${var.resource_name}"
   path               = "/"
   assume_role_policy = "${data.aws_iam_policy_document.mod_ec2_assume_role_policy_doc.json}"
 }
 
-resource "aws_iam_role_policy_attachment" "attach_core_ssm_policy" {
-  count = "${var.instance_profile_override ? 0 : 1}"
-
+resource "aws_iam_role_policy_attachment" "attach_ssm_policy" {
+  count      = "${var.instance_profile_override ? 0 : 1}"
   role       = "${aws_iam_role.mod_ec2_instance_role.name}"
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-}
-
-resource "aws_iam_role_policy_attachment" "attach_cw_ssm_policy" {
-  count = "${var.instance_profile_override ? 0 : 1}"
-
-  role       = "${aws_iam_role.mod_ec2_instance_role.name}"
-  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
-}
-
-resource "aws_iam_role_policy_attachment" "attach_ad_ssm_policy" {
-  count = "${var.instance_profile_override ? 0 : 1}"
-
-  role       = "${aws_iam_role.mod_ec2_instance_role.name}"
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMDirectoryServiceAccess"
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"
 }
 
 resource "aws_iam_role_policy_attachment" "attach_codedeploy_policy" {
-  count = "${var.install_codedeploy_agent && var.instance_profile_override != true ? 1 : 0}"
-
+  count      = "${var.install_codedeploy_agent && var.instance_profile_override != true ? 1 : 0}"
   role       = "${aws_iam_role.mod_ec2_instance_role.name}"
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforAWSCodeDeploy"
 }
 
 resource "aws_iam_role_policy_attachment" "attach_instance_role_policy" {
-  count = "${var.instance_profile_override ? 0 : 1}"
-
+  count      = "${var.instance_profile_override ? 0 : 1}"
   role       = "${aws_iam_role.mod_ec2_instance_role.name}"
   policy_arn = "${aws_iam_policy.create_instance_role_policy.arn}"
 }
 
 resource "aws_iam_role_policy_attachment" "attach_additonal_policies" {
-  count = "${var.instance_profile_override ? 0 : var.instance_role_managed_policy_arn_count}"
-
+  count      = "${var.instance_profile_override ? 0 : var.instance_role_managed_policy_arn_count}"
   role       = "${aws_iam_role.mod_ec2_instance_role.name}"
   policy_arn = "${element(var.instance_role_managed_policy_arns, count.index)}"
 }
 
 resource "aws_iam_instance_profile" "instance_role_instance_profile" {
   count = "${var.instance_profile_override ? 0 : 1}"
-
-  name = "InstanceRoleInstanceProfile-${var.resource_name}"
-  role = "${aws_iam_role.mod_ec2_instance_role.name}"
-  path = "/"
+  name  = "InstanceRoleInstanceProfile-${var.resource_name}"
+  role  = "${aws_iam_role.mod_ec2_instance_role.name}"
+  path  = "/"
 }
 
 #
@@ -409,9 +316,8 @@ data "template_file" "ssm_managed_commands" {
 }
 
 data "template_file" "additional_ssm_docs" {
-  count = "${var.additional_ssm_bootstrap_step_count}"
-
   template = "    $${additional_ssm_cmd_json},"
+  count    = "${var.additional_ssm_bootstrap_step_count}"
 
   vars {
     additional_ssm_cmd_json = "${trimspace(lookup(var.additional_ssm_bootstrap_list[count.index], "ssm_add_step"))}"
@@ -422,11 +328,9 @@ data "template_file" "ssm_bootstrap_template" {
   template = "${file("${path.module}/text/ssm_bootstrap_template.json")}"
 
   vars {
-    region              = "${data.aws_region.current_region.name}"
     cw_agent_param      = "${var.provide_custom_cw_agent_config ? var.custom_cw_agent_config_ssm_param : local.cw_config_parameter_name}"
     managed_ssm_docs    = "${var.rackspace_managed ? data.template_file.ssm_managed_commands.rendered : ""}"
     codedeploy_doc      = "${local.ssm_codedeploy_include[local.codedeploy_install]}"
-    scaleft_doc         = "${local.ssm_scaleft_include[local.scaleft_install]}"
     nfs_doc             = "${local.ssm_nfs_include[local.nfs_install]}"
     additional_ssm_docs = "${join("\n", data.template_file.additional_ssm_docs.*.rendered)}"
   }
@@ -440,8 +344,7 @@ resource "aws_ssm_document" "ssm_bootstrap_doc" {
 }
 
 resource "aws_ssm_parameter" "cwagentparam" {
-  count = "${var.provide_custom_cw_agent_config ? 0 : 1}"
-
+  count       = "${var.provide_custom_cw_agent_config ? 0 : 1}"
   name        = "${local.cw_config_parameter_name}"
   description = "${var.resource_name} Cloudwatch Agent configuration"
   type        = "String"
@@ -449,8 +352,7 @@ resource "aws_ssm_parameter" "cwagentparam" {
 }
 
 resource "aws_ssm_association" "ssm_bootstrap_assoc" {
-  count = "${var.instance_count == 0 ? 0 : 1}"
-
+  count               = "${var.instance_count == 0 ? 0 : 1}"
   name                = "${aws_ssm_document.ssm_bootstrap_doc.name}"
   schedule_expression = "${var.ssm_association_refresh_rate}"
 
@@ -475,110 +377,106 @@ resource "aws_cloudwatch_log_group" "application_logs" {
   retention_in_days = "${var.cloudwatch_log_retention}"
 }
 
-data "null_data_source" "alarm_dimensions" {
-  count = "${var.instance_count}"
+resource "aws_cloudwatch_metric_alarm" "status_check_failed_system_alarm_ticket" {
+  count               = "${var.instance_count}"
+  alarm_name          = "${join("-", list("StatusCheckFailedSystemAlarmTicket", var.resource_name, format("%03d",count.index+1)))}"
+  alarm_description   = "Status checks have failed for system, generating ticket."
+  namespace           = "AWS/EC2"
+  statistic           = "Minimum"
+  comparison_operator = "GreaterThanThreshold"
+  threshold           = "0"
+  unit                = "Count"
+  evaluation_periods  = "2"
+  period              = "60"
+  metric_name         = "StatusCheckFailed_System"
+  ok_actions          = ["${local.recovery_ok_action[local.recovery_action]}"]
+  alarm_actions       = ["${local.recovery_alarm_action[local.recovery_action]}"]
 
-  inputs = {
+  dimensions {
+    # coalescelist and list("novalue") were used here due to element not being able to handle empty lists, even if conditional will not allow portion to execute
     InstanceId = "${element(coalescelist(aws_instance.mod_ec2_instance_with_secondary_ebs.*.id, aws_instance.mod_ec2_instance_no_secondary_ebs.*.id), count.index)}"
   }
 }
 
-module "status_check_failed_system_alarm_ticket" {
-  source = "git@github.com:kevinquanx3/aws-terraform-cloudwatch_alarm//?ref=v0.0.1"
-
-  alarm_count              = "${var.instance_count}"
-  alarm_description        = "Status checks have failed for system, generating ticket."
-  alarm_name               = "${join("-", list("StatusCheckFailedSystemAlarmTicket", var.resource_name))}"
-  comparison_operator      = "GreaterThanThreshold"
-  dimensions               = "${data.null_data_source.alarm_dimensions.*.outputs}"
-  evaluation_periods       = "2"
-  notification_topic       = ["${var.notification_topic}"]
-  metric_name              = "StatusCheckFailed_System"
-  rackspace_alarms_enabled = true
-  rackspace_managed        = "${var.rackspace_managed}"
-  namespace                = "AWS/EC2"
-  period                   = "60"
-  severity                 = "emergency"
-  statistic                = "Minimum"
-  threshold                = "0"
-  unit                     = "Count"
-}
-
 resource "aws_cloudwatch_metric_alarm" "status_check_failed_instance_alarm_reboot" {
-  count = "${var.enable_recovery_alarms ? var.instance_count : 0}"
-
-  alarm_description   = "Status checks have failed, rebooting system."
+  count               = "${var.instance_count}"
   alarm_name          = "${join("-", list("StatusCheckFailedInstanceAlarmReboot", var.resource_name, format("%03d",count.index+1)))}"
-  comparison_operator = "GreaterThanThreshold"
-  dimensions          = "${data.null_data_source.alarm_dimensions.*.outputs[count.index]}"
-  evaluation_periods  = "5"
-  metric_name         = "StatusCheckFailed_Instance"
+  alarm_description   = "Status checks have failed, rebooting system."
   namespace           = "AWS/EC2"
-  period              = "60"
   statistic           = "Minimum"
+  comparison_operator = "GreaterThanThreshold"
   threshold           = "0"
   unit                = "Count"
+  evaluation_periods  = "5"
+  period              = "60"
+  metric_name         = "StatusCheckFailed_Instance"
+  alarm_actions       = ["arn:aws:swf:${data.aws_region.current_region.name}:${data.aws_caller_identity.current_account.account_id}:action/actions/AWS_EC2.InstanceId.Reboot/1.0"]
 
-  alarm_actions = ["arn:aws:swf:${data.aws_region.current_region.name}:${data.aws_caller_identity.current_account.account_id}:action/actions/AWS_EC2.InstanceId.Reboot/1.0"]
+  dimensions {
+    # coalescelist and list("novalue") were used here due to element not being able to handle empty lists, even if conditional will not allow portion to execute
+    InstanceId = "${element(coalescelist(aws_instance.mod_ec2_instance_with_secondary_ebs.*.id, aws_instance.mod_ec2_instance_no_secondary_ebs.*.id), count.index)}"
+  }
 }
 
 resource "aws_cloudwatch_metric_alarm" "status_check_failed_system_alarm_recover" {
-  count = "${var.enable_recovery_alarms ? var.instance_count : 0}"
-
-  alarm_description   = "Status checks have failed for system, recovering instance"
+  count               = "${var.instance_count}"
   alarm_name          = "${join("-", list("StatusCheckFailedSystemAlarmRecover", var.resource_name, format("%03d",count.index+1)))}"
-  comparison_operator = "GreaterThanThreshold"
-  dimensions          = "${data.null_data_source.alarm_dimensions.*.outputs[count.index]}"
-  evaluation_periods  = "2"
-  metric_name         = "StatusCheckFailed_System"
+  alarm_description   = "Status checks have failed for system, recovering instance"
   namespace           = "AWS/EC2"
-  period              = "60"
   statistic           = "Minimum"
+  comparison_operator = "GreaterThanThreshold"
   threshold           = "0"
   unit                = "Count"
+  evaluation_periods  = "2"
+  period              = "60"
+  metric_name         = "StatusCheckFailed_System"
+  alarm_actions       = ["arn:aws:automate:${data.aws_region.current_region.name}:ec2:recover"]
 
-  alarm_actions = ["arn:aws:automate:${data.aws_region.current_region.name}:ec2:recover"]
+  dimensions {
+    # coalescelist and list("novalue") were used here due to element not being able to handle empty lists, even if conditional will not allow portion to execute
+    InstanceId = "${element(coalescelist(aws_instance.mod_ec2_instance_with_secondary_ebs.*.id, aws_instance.mod_ec2_instance_no_secondary_ebs.*.id), count.index)}"
+  }
 }
 
-module "status_check_failed_instance_alarm_ticket" {
-  source = "git@github.com:kevinquanx3/aws-terraform-cloudwatch_alarm//?ref=v0.0.1"
+resource "aws_cloudwatch_metric_alarm" "status_check_failed_instance_alarm_ticket" {
+  count               = "${var.instance_count}"
+  alarm_name          = "${join("-", list("StatusCheckFailedInstanceAlarmTicket", var.resource_name, format("%03d",count.index+1)))}"
+  alarm_description   = "Status checks have failed, generating ticket."
+  namespace           = "AWS/EC2"
+  statistic           = "Minimum"
+  comparison_operator = "GreaterThanThreshold"
+  threshold           = "0"
+  unit                = "Count"
+  evaluation_periods  = "10"
+  period              = "60"
+  metric_name         = "StatusCheckFailed_Instance"
+  ok_actions          = ["${local.recovery_ok_action[local.recovery_action]}"]
+  alarm_actions       = ["${local.recovery_alarm_action[local.recovery_action]}"]
 
-  alarm_count              = "${var.instance_count}"
-  alarm_description        = "Status checks have failed, generating ticket."
-  alarm_name               = "${join("-", list("StatusCheckFailedInstanceAlarmTicket", var.resource_name))}"
-  comparison_operator      = "GreaterThanThreshold"
-  dimensions               = "${data.null_data_source.alarm_dimensions.*.outputs}"
-  evaluation_periods       = "10"
-  metric_name              = "StatusCheckFailed_Instance"
-  notification_topic       = ["${var.notification_topic}"]
-  namespace                = "AWS/EC2"
-  period                   = "60"
-  rackspace_alarms_enabled = true
-  rackspace_managed        = "${var.rackspace_managed}"
-  severity                 = "emergency"
-  statistic                = "Minimum"
-  threshold                = "0"
-  unit                     = "Count"
+  dimensions {
+    # coalescelist and list("novalue") were used here due to element not being able to handle empty lists, even if conditional will not allow portion to execute
+    InstanceId = "${element(coalescelist(aws_instance.mod_ec2_instance_with_secondary_ebs.*.id, aws_instance.mod_ec2_instance_no_secondary_ebs.*.id), count.index)}"
+  }
 }
 
-module "cpu_alarm_high" {
-  source = "git@github.com:kevinquanx3/aws-terraform-cloudwatch_alarm//?ref=v0.0.1"
+resource "aws_cloudwatch_metric_alarm" "cpu_alarm_high" {
+  count               = "${var.instance_count}"
+  alarm_name          = "${join("-", list("CPUAlarmHigh", var.resource_name, format("%03d",count.index+1)))}"
+  alarm_description   = "CPU Alarm ${var.cw_cpu_high_operator} ${var.cw_cpu_high_threshold}% for ${var.cw_cpu_high_period} seconds ${var.cw_cpu_high_evaluations} times."
+  namespace           = "AWS/EC2"
+  statistic           = "Average"
+  comparison_operator = "${var.cw_cpu_high_operator}"
+  threshold           = "${var.cw_cpu_high_threshold}"
+  evaluation_periods  = "${var.cw_cpu_high_evaluations}"
+  period              = "${var.cw_cpu_high_period}"
+  metric_name         = "CPUUtilization"
+  ok_actions          = []
+  alarm_actions       = ["${compact(list(var.alarm_notification_topic))}"]
 
-  alarm_count              = "${var.instance_count}"
-  alarm_description        = "CPU Alarm ${var.cw_cpu_high_operator} ${var.cw_cpu_high_threshold}% for ${var.cw_cpu_high_period} seconds ${var.cw_cpu_high_evaluations} times."
-  alarm_name               = "${join("-", list("CPUAlarmHigh", var.resource_name))}"
-  comparison_operator      = "${var.cw_cpu_high_operator}"
-  customer_alarms_enabled  = true
-  dimensions               = "${data.null_data_source.alarm_dimensions.*.outputs}"
-  evaluation_periods       = "${var.cw_cpu_high_evaluations}"
-  metric_name              = "CPUUtilization"
-  notification_topic       = ["${var.notification_topic}"]
-  namespace                = "AWS/EC2"
-  period                   = "${var.cw_cpu_high_period}"
-  rackspace_alarms_enabled = false
-  rackspace_managed        = "${var.rackspace_managed}"
-  statistic                = "Average"
-  threshold                = "${var.cw_cpu_high_threshold}"
+  dimensions {
+    # coalescelist and list("novalue") were used here due to element not being able to handle empty lists, even if conditional will not allow portion to execute
+    InstanceId = "${element(coalescelist(aws_instance.mod_ec2_instance_with_secondary_ebs.*.id, aws_instance.mod_ec2_instance_no_secondary_ebs.*.id), count.index)}"
+  }
 }
 
 #
@@ -586,9 +484,8 @@ module "cpu_alarm_high" {
 #
 
 resource "aws_instance" "mod_ec2_instance_no_secondary_ebs" {
-  count = "${var.secondary_ebs_volume_size != "" ? 0 : var.instance_count}"
-
   ami                    = "${var.image_id != "" ? var.image_id : data.aws_ami.ar_ami.image_id}"
+  count                  = "${var.secondary_ebs_volume_size != "" ? 0 : var.instance_count}"
   subnet_id              = "${element(var.subnets, count.index)}"
   vpc_security_group_ids = ["${var.security_group_list}"]
   instance_type          = "${var.instance_type}"
@@ -627,9 +524,8 @@ resource "aws_instance" "mod_ec2_instance_no_secondary_ebs" {
 }
 
 resource "aws_instance" "mod_ec2_instance_with_secondary_ebs" {
-  count = "${var.secondary_ebs_volume_size != "" ? var.instance_count : 0}"
-
   ami                    = "${var.image_id != "" ? var.image_id : data.aws_ami.ar_ami.image_id}"
+  count                  = "${var.secondary_ebs_volume_size != "" ? var.instance_count : 0}"
   subnet_id              = "${element(var.subnets, count.index)}"
   vpc_security_group_ids = ["${var.security_group_list}"]
   instance_type          = "${var.instance_type}"
@@ -657,12 +553,11 @@ resource "aws_instance" "mod_ec2_instance_with_secondary_ebs" {
   volume_tags = "${var.ebs_volume_tags}"
 
   ebs_block_device {
-    device_name = "${lookup(local.ebs_device_map, local.ec2_os)}"
+    device_name = "${lookup(local.ebs_device_map, var.ec2_os)}"
     volume_type = "${var.secondary_ebs_volume_type}"
     volume_size = "${var.secondary_ebs_volume_size}"
     iops        = "${var.secondary_ebs_volume_iops}"
-    encrypted   = "${var.secondary_ebs_volume_existing_id == "" ? var.encrypt_secondary_ebs_volume: false}"
-    snapshot_id = "${var.secondary_ebs_volume_existing_id}"
+    encrypted   = "${var.encrypt_secondary_ebs_volume}"
   }
 
   timeouts {

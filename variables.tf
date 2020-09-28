@@ -21,7 +21,7 @@ variable "disable_api_termination" {
 }
 
 variable "ec2_os" {
-  description = "Intended Operating System/Distribution of Instance. Valid inputs are `amazon`, `amazon2`, `centos6`, `centos7`, `rhel6`, `rhel7`, `rhel8`, `ubuntu14`, `ubuntu16`, `ubuntu18`, `windows2008`, `windows2012r2`, `windows2016`, `windows2019`"
+  description = "Intended Operating System/Distribution of Instance. Valid inputs are ('amazon', 'rhel6', 'rhel7', 'centos6', 'centos7', 'ubuntu14', 'ubuntu16', 'windows2008', 'windows2012R2', 'windows2016')"
   type        = "string"
 }
 
@@ -35,12 +35,6 @@ variable "install_codedeploy_agent" {
   description = "Install codedeploy agent on instance(s)? true or false"
   type        = "string"
   default     = false
-}
-
-variable "install_scaleft_agent" {
-  description = "Install scaleft agent on instance(s)? true or false"
-  type        = "string"
-  default     = true
 }
 
 variable "install_nfs" {
@@ -163,12 +157,6 @@ variable "primary_ebs_volume_type" {
   default     = "gp2"
 }
 
-variable "secondary_ebs_volume_existing_id" {
-  description = "The Snapshot ID of an existing EBS volume you want to use for the secondary volume. i.e. snap-0ad8580e3ac34a9f1"
-  type        = "string"
-  default     = ""
-}
-
 variable "secondary_ebs_volume_iops" {
   description = "Iops value required for use with io1 EBS volumes. This value should be 3 times the EBS volume size"
   type        = "string"
@@ -247,7 +235,7 @@ variable "ssm_patching_group" {
 # CloudWatch and Logs
 #
 
-variable "notification_topic" {
+variable "alarm_notification_topic" {
   description = "SNS Topic ARN to notify if there are any alarms"
   type        = "string"
   default     = ""
@@ -281,12 +269,6 @@ variable "cw_cpu_high_threshold" {
   description = "The value against which the specified statistic is compared."
   type        = "string"
   default     = "90"
-}
-
-variable "enable_recovery_alarms" {
-  description = "Boolean parameter controlling if auto-recovery alarms should be created.  Recovery actions are not supported on all instance types and AMIs, especially those with ephemeral storage.  This parameter should be set to false for those cases."
-  type        = "string"
-  default     = true
 }
 
 variable "provide_custom_cw_agent_config" {

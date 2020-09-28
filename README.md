@@ -4,28 +4,19 @@ This module creates one or more autorecovery instances.
 
 ## Basic Usage
 
-```HCL
+```
 module "ar" {
-  source = "git@github.com:rackspace-infrastructure-automation/aws-terraform-ec2_autorecovery//?ref=v0.0.20"
+ source = "git@github.com:rackspace-infrastructure-automation/aws-terraform-ec2_autorecovery//?ref=v0.0.2"
 
-  ec2_os              = "amazon"
-  subnets             = ["${module.vpc.private_subnets}"]
-  image_id            = "${var.image_id}"
-  resource_name       = "my_ar_instance"
-  security_group_list = ["${module.sg.private_web_security_group_id}"]
+ ec2_os              = "amazon"
+ subnets             = ["${module.vpc.private_subnets}"]
+ image_id            = "${var.image_id}"
+ resource_name       = "my_ar_instance"
+ security_group_list = ["${module.sg.private_web_security_group_id}"]
 }
 ```
 
 Full working references are available at [examples](examples)
-_**Note**: When using an existing EBS snapshot you can not use the encryption variable. The encryption must be set at the snapshot level._
-
-## Other TF Modules Used
-Using [aws-terraform-cloudwatch_alarm](https://github.com/rackspace-infrastructure-automation/aws-terraform-cloudwatch_alarm) to create the following CloudWatch Alarms:
-- status_check_failed_system_alarm_ticket
-- status_check_failed_instance_alarm_reboot
-- status_check_failed_system_alarm_recover
-- status_check_failed_instance_alarm_ticket
-- cpu_alarm_high
 
 ## Inputs
 
@@ -34,6 +25,7 @@ Using [aws-terraform-cloudwatch_alarm](https://github.com/rackspace-infrastructu
 | additional\_ssm\_bootstrap\_list | A list of maps consisting of main step actions, to be appended to SSM associations. Please see usage.tf.example in this repo for examples. | list | `<list>` | no |
 | additional\_ssm\_bootstrap\_step\_count | Count of steps added for input 'additional_ssm_bootstrap_list'. This is required since 'additional_ssm_bootstrap_list' is a list of maps | string | `"0"` | no |
 | additional\_tags | Additional tags to be added to the EC2 instance Please see usage.tf.example in this repo for examples. | map | `<map>` | no |
+| alarm\_notification\_topic | SNS Topic ARN to notify if there are any alarms | string | `""` | no |
 | backup\_tag\_value | Value of the 'Backup' tag, used to assign te EBSSnapper configuration | string | `"False"` | no |
 | cloudwatch\_log\_retention | The number of days to retain Cloudwatch Logs for this instance. | string | `"30"` | no |
 | creation\_policy\_timeout | Time to wait for the number of signals for the creation policy. H/M/S Hours/Minutes/Seconds | string | `"20m"` | no |
@@ -45,11 +37,10 @@ Using [aws-terraform-cloudwatch_alarm](https://github.com/rackspace-infrastructu
 | detailed\_monitoring | Enable Detailed Monitoring? true or false | string | `"true"` | no |
 | disable\_api\_termination | Specifies that an instance should not be able to be deleted via the API. true or false. This option must be toggled to false to allow Terraform to destroy the resource. | string | `"false"` | no |
 | ebs\_volume\_tags | (Optional) A mapping of tags to assign to the devices created by the instance at launch time. | map | `<map>` | no |
-| ec2\_os | Intended Operating System/Distribution of Instance. Valid inputs are `amazon`, `amazon2`, `centos6`, `centos7`, `rhel6`, `rhel7`, `rhel8`, `ubuntu14`, `ubuntu16`, `ubuntu18`, `windows2008`, `windows2012r2`, `windows2016`, `windows2019` | string | n/a | yes |
+| ec2\_os | Intended Operating System/Distribution of Instance. Valid inputs are ('amazon', 'rhel6', 'rhel7', 'centos6', 'centos7', 'ubuntu14', 'ubuntu16', 'windows2008', 'windows2012R2', 'windows2016') | string | n/a | yes |
 | eip\_allocation\_id\_count | A count of supplied eip allocation IDs in variable eip_allocation_id_list | string | `"0"` | no |
 | eip\_allocation\_id\_list | A list of Allocation IDs of the EIPs you want to associate with the instance(s). This is one per instance. e.g. if you specify 2 for instance_count then you must supply two allocation ids  here. | list | `<list>` | no |
 | enable\_ebs\_optimization | Use EBS Optimized? true or false | string | `"false"` | no |
-| enable\_recovery\_alarms | Boolean parameter controlling if auto-recovery alarms should be created.  Recovery actions are not supported on all instance types and AMIs, especially those with ephemeral storage.  This parameter should be set to false for those cases. | string | `"true"` | no |
 | encrypt\_secondary\_ebs\_volume | Encrypt EBS Volume? true or false | string | `"false"` | no |
 | environment | Application environment for which this network is being created. Preferred value are Development, Integration, PreProduction, Production, QA, Staging, or Test | string | `"Development"` | no |
 | final\_userdata\_commands | Commands to be given at the end of userdata for an instance. This should generally not include bootstrapping or ssm install. | string | `""` | no |
@@ -57,7 +48,6 @@ Using [aws-terraform-cloudwatch_alarm](https://github.com/rackspace-infrastructu
 | initial\_userdata\_commands | Commands to be given at the start of userdata for an instance. This should generally not include bootstrapping or ssm install. | string | `""` | no |
 | install\_codedeploy\_agent | Install codedeploy agent on instance(s)? true or false | string | `"false"` | no |
 | install\_nfs | Install NFS service on instance(s)? true or false | string | `"false"` | no |
-| install\_scaleft\_agent | Install scaleft agent on instance(s)? true or false | string | `"true"` | no |
 | instance\_count | Number of identical instances to deploy | string | `"1"` | no |
 | instance\_profile\_override | Optionally provide an instance profile. Any override profile should contain the permissions required for Rackspace support tooling to continue to function if required. | string | `"false"` | no |
 | instance\_profile\_override\_name | Provide an instance profile name. Any override profile should contain the permissions required for Rackspace support tooling to continue to function if required. To use this set `instance_profile_override` to `true`. | string | `""` | no |
@@ -65,7 +55,6 @@ Using [aws-terraform-cloudwatch_alarm](https://github.com/rackspace-infrastructu
 | instance\_role\_managed\_policy\_arns | List of IAM policy ARNs for the InstanceRole IAM role. IAM ARNs can be found within the Policies section of the AWS IAM console. e.g. ['arn:aws:iam::aws:policy/AmazonEC2FullAccess', 'arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM', 'arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetRole'] | list | `<list>` | no |
 | instance\_type | EC2 Instance Type e.g. 't2.micro' | string | `"t2.micro"` | no |
 | key\_pair | Name of an existing EC2 KeyPair to enable SSH access to the instances. | string | `""` | no |
-| notification\_topic | SNS Topic ARN to notify if there are any alarms | string | `""` | no |
 | perform\_ssm\_inventory\_tag | Determines whether Instance is tracked via System Manager Inventory. | string | `"True"` | no |
 | primary\_ebs\_volume\_iops | Iops value required for use with io1 EBS volumes. This value should be 3 times the EBS volume size | string | `"0"` | no |
 | primary\_ebs\_volume\_size | EBS Volume Size in GB | string | `"60"` | no |
@@ -74,7 +63,6 @@ Using [aws-terraform-cloudwatch_alarm](https://github.com/rackspace-infrastructu
 | provide\_custom\_cw\_agent\_config | Set to true if a custom cloudwatch agent configuration has been provided in variable custom_cw_agent_config_ssm_param. | string | `"false"` | no |
 | rackspace\_managed | Boolean parameter controlling if instance will be fully managed by Rackspace support teams, created CloudWatch alarms that generate tickets, and utilize Rackspace managed SSM documents. | string | `"true"` | no |
 | resource\_name | Name to be used for the provisioned EC2 instance(s) and other resources provisioned in this module | string | n/a | yes |
-| secondary\_ebs\_volume\_existing\_id | The Snapshot ID of an existing EBS volume you want to use for the secondary volume. i.e. snap-0ad8580e3ac34a9f1 | string | `""` | no |
 | secondary\_ebs\_volume\_iops | Iops value required for use with io1 EBS volumes. This value should be 3 times the EBS volume size | string | `"0"` | no |
 | secondary\_ebs\_volume\_size | EBS Volume Size in GB | string | `""` | no |
 | secondary\_ebs\_volume\_type | EBS Volume Type. e.g. gp2, io1, st1, sc1 | string | `"gp2"` | no |
