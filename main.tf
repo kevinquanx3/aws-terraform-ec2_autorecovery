@@ -74,7 +74,7 @@ locals {
     {
       "action": "aws:runDocument",
       "inputs": {
-        "documentPath": "arn:aws:ssm:${data.aws_region.current_region.name}:507897595701:document/Rack-Install_CodeDeploy",
+        "documentPath": "arn:aws:ssm:${data.aws_region.current_region.name}:385708577982:document/LSM-Install_CodeDeploy",
         "documentType": "SSMDocument"
       },
       "name": "InstallCodeDeployAgent"
