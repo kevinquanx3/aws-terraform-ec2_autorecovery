@@ -213,8 +213,8 @@ variable "perform_ssm_inventory_tag" {
   default     = "True"
 }
 
-variable "rackspace_managed" {
-  description = "Boolean parameter controlling if instance will be fully managed by Rackspace support teams, created CloudWatch alarms that generate tickets, and utilize Rackspace managed SSM documents."
+variable "lsm_managed" {
+  description = "Boolean parameter controlling if instance will be fully managed by lsm support teams, created CloudWatch alarms that generate tickets, and utilize lsm managed SSM documents."
   type        = "string"
   default     = true
 }
@@ -288,13 +288,13 @@ variable "custom_cw_agent_config_ssm_param" {
 #
 
 variable "instance_profile_override" {
-  description = "Optionally provide an instance profile. Any override profile should contain the permissions required for Rackspace support tooling to continue to function if required."
+  description = "Optionally provide an instance profile. Any override profile should contain the permissions required for lsm support tooling to continue to function if required."
   type        = "string"
   default     = false
 }
 
 variable "instance_profile_override_name" {
-  description = "Provide an instance profile name. Any override profile should contain the permissions required for Rackspace support tooling to continue to function if required. To use this set `instance_profile_override` to `true`."
+  description = "Provide an instance profile name. Any override profile should contain the permissions required for lsm support tooling to continue to function if required. To use this set `instance_profile_override` to `true`."
   type        = "string"
   default     = ""
 }

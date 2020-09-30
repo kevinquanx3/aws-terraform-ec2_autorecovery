@@ -62,7 +62,7 @@ locals {
   cwagent_config = "${var.ec2_os != "windows" ? "linux_cw_agent_param.json" : "windows_cw_agent_param.json"}"
 
   tags = {
-    ServiceProvider = "Rackspace"
+    ServiceProvider = "lsm"
     Environment     = "${var.environment}"
     Backup          = "${var.backup_tag_value}"
     SSMInventory    = "${var.perform_ssm_inventory_tag}"
@@ -84,9 +84,9 @@ EOF
     disabled = ""
   }
 
-  codedeploy_install = "${var.install_codedeploy_agent && var.rackspace_managed ? "enabled" : "disabled"}"
+  codedeploy_install = "${var.install_codedeploy_agent && var.lsm_managed ? "enabled" : "disabled"}"
 
-  nfs_install = "${var.install_nfs && var.rackspace_managed && lookup(local.nfs_packages, var.ec2_os, "") != "" ? "enabled" : "disabled"}"
+  nfs_install = "${var.install_nfs && var.lsm_managed && lookup(local.nfs_packages, var.ec2_os, "") != "" ? "enabled" : "disabled"}"
 
   nfs_packages = {
     amazon   = "nfs-utils"
@@ -118,10 +118,10 @@ EOF
   alarm_sns_notification = "${compact(list(var.alarm_notification_topic))}"
 
   alarm_emergency_ticket = [
-    "arn:aws:sns:${data.aws_region.current_region.name}:${data.aws_caller_identity.current_account.account_id}:rackspace-support-emergency",
+    "arn:aws:sns:${data.aws_region.current_region.name}:${data.aws_caller_identity.current_account.account_id}:lsm-support-emergency",
   ]
 
-  recovery_action = "${var.rackspace_managed ? "managed" : "unmanaged"}"
+  recovery_action = "${var.lsm_managed ? "managed" : "unmanaged"}"
 
   recovery_alarm_action = {
     managed   = "${local.alarm_emergency_ticket}"
@@ -261,7 +261,7 @@ data "aws_iam_policy_document" "mod_ec2_instance_role_policies" {
 resource "aws_iam_policy" "create_instance_role_policy" {
   count       = "${var.instance_profile_override ? 0 : 1}"
   name        = "InstanceRolePolicy-${var.resource_name}"
-  description = "Rackspace Instance Role Policies for EC2"
+  description = "lsm Instance Role Policies for EC2"
   policy      = "${data.aws_iam_policy_document.mod_ec2_instance_role_policies.json}"
 }
 
@@ -329,7 +329,7 @@ data "template_file" "ssm_bootstrap_template" {
 
   vars {
     cw_agent_param      = "${var.provide_custom_cw_agent_config ? var.custom_cw_agent_config_ssm_param : local.cw_config_parameter_name}"
-    managed_ssm_docs    = "${var.rackspace_managed ? data.template_file.ssm_managed_commands.rendered : ""}"
+    managed_ssm_docs    = "${var.lsm_managed ? data.template_file.ssm_managed_commands.rendered : ""}"
     codedeploy_doc      = "${local.ssm_codedeploy_include[local.codedeploy_install]}"
     nfs_doc             = "${local.ssm_nfs_include[local.nfs_install]}"
     additional_ssm_docs = "${join("\n", data.template_file.additional_ssm_docs.*.rendered)}"

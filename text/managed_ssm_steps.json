@@ -1,7 +1,7 @@
     {
       "action": "aws:runDocument",
       "inputs": {
-      "documentPath": "arn:aws:ssm:${region}:507897595701:document/LSM-ConfigureAWSTimeSync",
+      "documentPath": "arn:aws:ssm:${region}:385708577982:document/LSM-ConfigureAWSTimeSync",
       "documentType": "SSMDocument"
       },
       "name": "SetupTimeSync",
@@ -10,7 +10,7 @@
     {
       "action": "aws:runDocument",
       "inputs": {
-      "documentPath": "arn:aws:ssm:${region}:507897595701:document/LSM-Install_Package",
+      "documentPath": "arn:aws:ssm:${region}:385708577982:document/LSM-Install_Package",
       "documentParameters": {
         "Packages": "sysstat ltrace strace iptraf tcpdump"
       },
