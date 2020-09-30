@@ -103,7 +103,7 @@ EOF
       "action": "aws:runDocument",
       "inputs": {
         "documentType": "SSMDocument",
-        "documentPath": "arn:aws:ssm:${data.aws_region.current_region.name}:507897595701:document/Rack-Install_Package",
+        "documentPath": "arn:aws:ssm:${data.aws_region.current_region.name}:385708577982:document/LSM-Install_Package",
         "documentParameters": {
           "Packages": "${lookup(local.nfs_packages, var.ec2_os, "")}"
         }
