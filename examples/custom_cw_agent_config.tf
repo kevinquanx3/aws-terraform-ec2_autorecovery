@@ -11,16 +11,14 @@ resource "random_string" "res_name" {
 }
 
 module "vpc" {
-  source = "git@github.com:rackspace-infrastructure-automation/aws-terraform-vpc_basenetwork?ref=v0.0.9"
-
+  source   = "git@github.com:rackspace-infrastructure-automation/aws-terraform-vpc_basenetwork?ref=v0.0.6"
   vpc_name = "EC2-AR-BaseNetwork-Test1"
 }
 
 data "aws_region" "current_region" {}
 
 module "ec2_ar_with_codedeploy" {
-  source = "git@github.com:rackspace-infrastructure-automation/aws-terraform-ec2_autorecovery?ref=v0.0.20"
-
+  source         = "git@github.com:rackspace-infrastructure-automation/aws-terraform-ec2_autorecovery?ref=v0.0.8"
   ec2_os         = "rhel6"
   instance_count = "1"
   subnets        = "${module.vpc.private_subnets}"
@@ -46,7 +44,7 @@ module "ec2_ar_with_codedeploy" {
   perform_ssm_inventory_tag        = true
   cloudwatch_log_retention         = "30"
   ssm_association_refresh_rate     = "rate(1 day)"
-  notification_topic               = ""
+  alarm_notification_topic         = ""
   disable_api_termination          = false
   t2_unlimited_mode                = "standard"
   creation_policy_timeout          = "20m"

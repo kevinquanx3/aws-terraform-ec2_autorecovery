@@ -62,7 +62,7 @@ locals {
   cwagent_config = "${var.ec2_os != "windows" ? "linux_cw_agent_param.json" : "windows_cw_agent_param.json"}"
 
   tags = {
-    ServiceProvider = "lsm"
+    ServiceProvider = "LSMspace"
     Environment     = "${var.environment}"
     Backup          = "${var.backup_tag_value}"
     SSMInventory    = "${var.perform_ssm_inventory_tag}"

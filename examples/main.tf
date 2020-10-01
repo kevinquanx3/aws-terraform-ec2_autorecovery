@@ -4,8 +4,7 @@ provider "aws" {
 }
 
 module "vpc" {
-  source = "git@github.com:rackspace-infrastructure-automation/aws-terraform-vpc_basenetwork?ref=v0.0.9"
-
+  source   = "git@github.com:rackspace-infrastructure-automation/aws-terraform-vpc_basenetwork?ref=v0.0.6"
   vpc_name = "EC2-AR-BaseNetwork-Test1"
 }
 
@@ -29,35 +28,29 @@ data "aws_ami" "amazon_centos_7" {
 }
 
 module "ec2_ar" {
-  source = "git@github.com:rackspace-infrastructure-automation/aws-terraform-ec2_autorecovery?ref=v0.0.20"
-
-  ec2_os                       = "centos7"
-  instance_count               = "3"
-  subnets                      = "${module.vpc.public_subnets}"
-  security_group_list          = ["${module.vpc.default_sg}"]
-  image_id                     = "${data.aws_ami.amazon_centos_7.image_id}"
-  key_pair                     = "mcardenas_testing"
-  instance_type                = "t2.micro"
-  resource_name                = "my_test_instance"
-  install_codedeploy_agent     = "False"
-  enable_ebs_optimization      = "False"
-  tenancy                      = "default"
-  backup_tag_value             = "False"
-  detailed_monitoring          = "True"
-  ssm_patching_group           = "Group1Patching"
-  primary_ebs_volume_size      = "60"
-  primary_ebs_volume_iops      = "0"
-  primary_ebs_volume_type      = "gp2"
-  secondary_ebs_volume_size    = "60"
-  secondary_ebs_volume_iops    = "0"
-  secondary_ebs_volume_type    = "gp2"
-  encrypt_secondary_ebs_volume = "False"
-
-  # Use Snapshot ID
-  //  use_existing_ebs_snapshot = true
-  //  secondary_ebs_volume_existing_id = "snap-39203923"
-  environment = "Development"
-
+  source                            = "git@github.com:rackspace-infrastructure-automation/aws-terraform-ec2_autorecovery?ref=v0.0.8"
+  ec2_os                            = "centos7"
+  instance_count                    = "3"
+  subnets                           = "${module.vpc.public_subnets}"
+  security_group_list               = ["${module.vpc.default_sg}"]
+  image_id                          = "${data.aws_ami.amazon_centos_7.image_id}"
+  key_pair                          = "mcardenas_testing"
+  instance_type                     = "t2.micro"
+  resource_name                     = "my_test_instance"
+  install_codedeploy_agent          = "False"
+  enable_ebs_optimization           = "False"
+  tenancy                           = "default"
+  backup_tag_value                  = "False"
+  detailed_monitoring               = "True"
+  ssm_patching_group                = "Group1Patching"
+  primary_ebs_volume_size           = "60"
+  primary_ebs_volume_iops           = "0"
+  primary_ebs_volume_type           = "gp2"
+  secondary_ebs_volume_size         = "60"
+  secondary_ebs_volume_iops         = "0"
+  secondary_ebs_volume_type         = "gp2"
+  encrypt_secondary_ebs_volume      = "False"
+  environment                       = "Development"
   instance_role_managed_policy_arns = ["arn:aws:iam::aws:policy/AmazonEC2FullAccess", "arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetRole", "arn:aws:iam::aws:policy/CloudWatchActionsEC2Access"]
   perform_ssm_inventory_tag         = "True"
   cloudwatch_log_retention          = "30"
@@ -102,7 +95,7 @@ EOF
   private_ip_address                  = ["10.0.1.131", "10.0.1.132", "10.0.1.133"]
   eip_allocation_id_list              = ["${aws_eip.my_eips.*.id}"]
   eip_allocation_id_count             = "3"
-  notification_topic                  = ""
+  alarm_notification_topic            = ""
   disable_api_termination             = "False"
   t2_unlimited_mode                   = "standard"
   creation_policy_timeout             = "20m"
