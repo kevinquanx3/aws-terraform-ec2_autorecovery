@@ -216,7 +216,7 @@ variable "perform_ssm_inventory_tag" {
 variable "lsm_managed" {
   description = "Boolean parameter controlling if instance will be fully managed by lsm support teams, created CloudWatch alarms that generate tickets, and utilize lsm managed SSM documents."
   type        = "string"
-  default     = false
+  default     = true
 }
 
 variable "ssm_association_refresh_rate" {
